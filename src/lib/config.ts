@@ -53,9 +53,12 @@ export async function getConfig(vendor: string): Promise<VendorConfig> {
     return fromEnv(vendor);
   }
 
+  // Stored as base64 text by the PUT route. Buffer.from() without an explicit
+  // encoding would decode as utf8 and silently produce the wrong bytes, so the
+  // AES-GCM tag check would fail with a misleading error.
   const decrypted = decryptJson<VendorConfig>({
-    ciphertext: Buffer.from(data.ciphertext),
-    iv: Buffer.from(data.iv),
+    ciphertext: Buffer.from(data.ciphertext, 'base64'),
+    iv: Buffer.from(data.iv, 'base64'),
   });
   CACHE.set(vendor, {at: Date.now(), data: decrypted, enabled: true});
   return decrypted;

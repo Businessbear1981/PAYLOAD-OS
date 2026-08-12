@@ -43,8 +43,11 @@ export async function PUT(req: NextRequest, ctx: {params: Promise<{vendor: strin
   if (typeof enabled === 'boolean') update.enabled = enabled;
   if (credentials && Object.keys(credentials).length > 0) {
     const {ciphertext, iv} = encryptJson(credentials);
-    update.ciphertext = ciphertext;
-    update.iv = iv;
+    // base64, not the raw Buffers. supabase-js JSON-serialises a Buffer to
+    // {"type":"Buffer","data":[…]}, which stores garbage and never decrypts.
+    // The columns are text for this reason — see integrations.sql.
+    update.ciphertext = ciphertext.toString('base64');
+    update.iv = iv.toString('base64');
   }
 
   if (Object.keys(update).length === 0) {
